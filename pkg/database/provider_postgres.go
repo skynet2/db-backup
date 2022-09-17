@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
@@ -111,26 +110,35 @@ func (p PostgresProvider) getCompressionLevel() int {
 	return level
 }
 
-func (p PostgresProvider) BackupDatabase(ctx context.Context, databaseName string) (string, error) {
+func (p PostgresProvider) BackupDatabase(ctx context.Context, databaseName string) (string, string, error) {
+	targetFileName := p.getTargetFileName(databaseName)
+
+	cmd := exec.Command("pg_dump",
+		"-F p",
+		fmt.Sprintf("-U %v", viper.GetString("DB_USER")),
+		fmt.Sprintf("-h %v", viper.GetString("DB_HOST")),
+		fmt.Sprintf("-f %v", targetFileName),
+		fmt.Sprintf("-Z %v", p.getCompressionLevel()),
+		fmt.Sprintf("-d %v", databaseName),
+	)
+
 	dbPassword := viper.GetString("DB_PASSWORD")
 
 	if len(dbPassword) > 0 {
-		if err := os.Setenv("PGPASSWORD", dbPassword); err != nil {
-			return "", errors.WithStack(err)
-		}
+		cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%v", dbPassword))
 	}
 
-	exec.Command("pg_dump",
-		fmt.Sprintf("-U %v", viper.GetString("DB_USER")),
-		fmt.Sprintf("-h %v", viper.GetString("DB_HOST")),
-		"-F p",
-		"-f",
-		fmt.Sprintf("-Z %v", p.getCompressionLevel()),
-	)
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return "", string(output), errors.WithStack(err)
+	}
+
+	return targetFileName, string(output), nil
 }
 
 func (p PostgresProvider) getTargetFileName(dbName string) string {
-	filepath.Join()
+	return filepath.Join(viper.GetString("DB_DUMP_DIR"), fmt.Sprintf("%v.sql.gzip", dbName))
 }
 
 func (p PostgresProvider) GetType() string {
