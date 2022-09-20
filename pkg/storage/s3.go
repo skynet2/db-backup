@@ -55,7 +55,7 @@ func (s S3Provider) Validate(ctx context.Context) error {
 	return err
 }
 
-func (s S3Provider) ListFiles(ctx context.Context, directory string) ([]string, error) {
+func (s S3Provider) ListFiles(ctx context.Context, prefix string) ([]File, error) {
 	bucket := viper.GetString("S3_BUCKET")
 
 	if len(bucket) == 0 {
@@ -70,11 +70,27 @@ func (s S3Provider) ListFiles(ctx context.Context, directory string) ([]string, 
 
 	cl := s3.New(ses)
 
-	resp, err := cl.ListObjects(&s3.ListObjectsInput{
+	resp, err := cl.ListObjectsWithContext(ctx, &s3.ListObjectsInput{
 		Bucket: &bucket,
+		Prefix: &prefix,
 	})
 
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
+	var finalFiles []File
+
+	for _, c := range resp.Contents {
+		if c.Key == nil || c.LastModified == nil {
+			continue
+		}
+
+		finalFiles = append(finalFiles, File{
+			AbsolutePath: *c.Key,
+			CreatedAt:    *c.LastModified,
+		})
+	}
+
+	return sortFiles(finalFiles), nil
 }
