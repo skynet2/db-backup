@@ -4,59 +4,19 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
+	"github.com/skynet2/db-backup/pkg/configuration"
 	"os/exec"
-	"time"
 )
 
 type PostgresProvider struct {
+	cfg configuration.PostgresConfiguration
 }
 
-func NewPostgresProvider() Provider {
-	return &PostgresProvider{}
-}
-
-func (p PostgresProvider) GetParametersList() []Parameter {
-	return []Parameter{
-		{
-			Name:        "DB_HOST",
-			Description: "Database host. ex: localhost",
-		},
-		{
-			Name:        "DB_PORT",
-			Description: "Database port. ex: 5432. Default 5432",
-		},
-		{
-			Name:        "DB_DB_DEFAULT_NAME",
-			Description: "Database default name. ex: postgres. Default postgres",
-		},
-		{
-			Name:        "DB_USER",
-			Description: "Database user",
-		},
-		{
-			Name:        "DB_PASSWORD",
-			Description: "Database password",
-		},
-		{
-			Name:        "DB_DUMP_DIR",
-			Description: "Temporary database dump dir",
-		},
-		{
-			Name:        "DB_TLS_ENABLED",
-			Description: "Database enable TLS support",
-		},
-		{
-			Name:        "DB_PGDUMP_CUSTOM_ARGS",
-			Description: "Database pgdump custom args",
-		},
-		{
-			Name:        "DB_COMPRESSION_LEVEL",
-			Description: "Database compression level. Default 5",
-		},
+func NewPostgresProvider(cfg configuration.PostgresConfiguration) Provider {
+	return &PostgresProvider{
+		cfg: cfg,
 	}
 }
 
@@ -100,7 +60,7 @@ func (p PostgresProvider) ListDatabase(ctx context.Context) ([]string, error) {
 }
 
 func (p PostgresProvider) getCompressionLevel() int {
-	level := viper.GetInt("DB_COMPRESSION_LEVEL")
+	level := p.cfg.CompressionLevel
 
 	if level == 0 {
 		return 5
@@ -116,14 +76,14 @@ func (p PostgresProvider) BackupDatabase(
 ) (string, error) {
 	cmd := exec.Command("pg_dump",
 		"-F p",
-		fmt.Sprintf("-U %v", viper.GetString("DB_USER")),
-		fmt.Sprintf("-h %v", viper.GetString("DB_HOST")),
+		fmt.Sprintf("-U %v", p.cfg.User),
+		fmt.Sprintf("-h %v", p.cfg.Host),
 		fmt.Sprintf("-f %v", finalFileName),
 		fmt.Sprintf("-Z %v", p.getCompressionLevel()),
 		fmt.Sprintf("-d %v", databaseName),
 	)
 
-	dbPassword := viper.GetString("DB_PASSWORD")
+	dbPassword := p.cfg.Password
 
 	if len(dbPassword) > 0 {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%v", dbPassword))
@@ -143,13 +103,13 @@ func (p PostgresProvider) GetType() string {
 }
 
 func (p PostgresProvider) getConnection(ctx context.Context) (*pgx.Conn, error) {
-	dbPort := uint16(viper.GetInt32("DB_PORT"))
+	dbPort := p.cfg.Port
 
 	if dbPort == 0 {
 		dbPort = 5432
 	}
 
-	defaultDbName := viper.GetString("DB_DB_DEFAULT_NAME")
+	defaultDbName := p.cfg.DbDefaultName
 
 	if len(defaultDbName) == 0 {
 		defaultDbName = "postgres"
@@ -157,23 +117,22 @@ func (p PostgresProvider) getConnection(ctx context.Context) (*pgx.Conn, error) 
 
 	var tlsConfig *tls.Config
 
-	if viper.GetBool("DB_TLS_ENABLED") {
+	if p.cfg.TlsEnabled {
 		tlsConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
 	}
 
-	con, err := pgx.ConnectConfig(ctx, &pgx.ConnConfig{
-		Config: pgconn.Config{
-			Host:           viper.GetString("DB_HOST"),
-			Port:           dbPort,
-			Database:       defaultDbName,
-			User:           viper.GetString("DB_USER"),
-			Password:       viper.GetString("DB_PASSWORD"),
-			TLSConfig:      tlsConfig,
-			ConnectTimeout: 15 * time.Second,
-		},
-	})
+	conStr, err := pgx.ParseConfig(fmt.Sprintf("postgresql://%v:%v@%v:%v/%v?connect_timeout=10&application_name=backup",
+		p.cfg.User, p.cfg.Password, p.cfg.Host, p.cfg.Port, defaultDbName))
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	conStr.TLSConfig = tlsConfig
+
+	con, err := pgx.ConnectConfig(ctx, conStr)
 
 	if err != nil {
 		return nil, errors.WithStack(err)

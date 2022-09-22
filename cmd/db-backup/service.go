@@ -10,7 +10,6 @@ import (
 	"github.com/skynet2/db-backup/pkg/configuration"
 	"github.com/skynet2/db-backup/pkg/database"
 	"github.com/skynet2/db-backup/pkg/storage"
-	"github.com/spf13/viper"
 	"golang.org/x/exp/slices"
 	"os"
 	"path/filepath"
@@ -23,25 +22,33 @@ type Service struct {
 	cfg             configuration.Configuration
 }
 
-func NewService() *Service {
-	return &Service{}
+func NewService(
+	dbProvider database.Provider,
+	storageProvider storage.Provider,
+	cfg configuration.Configuration,
+) *Service {
+	return &Service{
+		dbProvider:      dbProvider,
+		storageProvider: storageProvider,
+		cfg:             cfg,
+	}
 }
 
-func (s *Service) Process(ctx context.Context) error {
+func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 	if err := s.validate(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	dbs, err := s.dbProvider.ListDatabase(ctx)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	dbs = s.getDbsToBackup(dbs)
 
 	if len(dbs) == 0 {
-		return errors.New("no databases to backup")
+		return nil, errors.New("no databases to backup")
 	}
 
 	var finalErrors error
@@ -121,7 +128,7 @@ func (s *Service) Process(ctx context.Context) error {
 			n := time.Now().UTC()
 			job.StorageProviderType = s.storageProvider.GetType()
 			job.StorageProviderStartedAt = &n
-			job.StorageFileLocation = fmt.Sprintf("%v/%v", viper.GetString("STORAGE_DIRECTORY"), fileName)
+			job.StorageFileLocation = fmt.Sprintf("%v/%v", s.cfg.Storage.S3, fileName)
 
 			if err = s.storageProvider.Upload(ctx, job.StorageFileLocation, file); err != nil {
 				job.Error = errors.WithStack(err)
@@ -144,6 +151,7 @@ func (s *Service) Process(ctx context.Context) error {
 
 			for _, toRemove := range filesForRemoving {
 				job.RemovedFiles = append(job.RemovedFiles, toRemove.AbsolutePath)
+				zerolog.Ctx(innerCtx).Info().Msgf("removing deprecated file from storage %v", toRemove.AbsolutePath)
 
 				if err := s.storageProvider.Remove(innerCtx, toRemove.AbsolutePath); err != nil {
 					job.Error = multierror.Append(job.Error, errors.WithStack(err))
@@ -152,11 +160,11 @@ func (s *Service) Process(ctx context.Context) error {
 		}()
 	}
 
-	return nil
+	return jobs, nil
 }
 
 func (s *Service) getFilesForRemoving(ctx context.Context, files []storage.File) []storage.File {
-	filesToStore := viper.GetInt("STORAGE_MAX_FILES")
+	filesToStore := s.cfg.Storage.MaxFiles
 
 	if filesToStore == 0 {
 		filesToStore = 5
@@ -174,7 +182,7 @@ func (s *Service) getFinalFilename(dbName string) (string, string, string) {
 	fileName := fmt.Sprintf("%v%v.sql.gzip", prefix,
 		time.Now().UTC().Format("2006_01_02-15_04_05"))
 
-	fullPath := filepath.Join(viper.GetString("DB_DUMP_DIR"), fileName)
+	fullPath := filepath.Join(s.cfg.Db.DumpDir, fileName)
 
 	return prefix, fileName, fullPath
 }

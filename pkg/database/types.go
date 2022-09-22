@@ -7,7 +7,6 @@ type Provider interface {
 	ListDatabase(ctx context.Context) ([]string, error)
 	BackupDatabase(ctx context.Context, databaseName string, finalFileName string) (string, error)
 	GetType() string
-	GetParametersList() []Parameter
 }
 type Parameter struct {
 	Name        string

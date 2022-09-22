@@ -1,0 +1,25 @@
+include_dbs:
+  - config
+  - master
+db:
+  provider: postgres
+  dump_dir: ""
+  postgres:
+    host: 127.0.0.1
+    port: 5432
+    user: postgres
+    password: postgres
+    db_default_name: postgres
+    tls_enabled: false
+storage:
+  provider: s3
+  dir: ""
+  max_files: 5
+  s3:
+    region: "nl-eu"
+    endpoint: ""
+    bucket: ""
+    access_key: ""
+    secret_key: ""
+    disable_ssl: true
+    force_path_style: false
