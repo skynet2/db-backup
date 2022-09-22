@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+	"io"
 )
 
 type S3Provider struct {
@@ -50,13 +51,39 @@ func NewS3Provider() Provider {
 }
 
 func (s S3Provider) Validate(ctx context.Context) error {
-	_, err := s.ListFiles(ctx, s.s3Dir)
+	_, err := s.List(ctx, s.s3Dir)
 
 	return err
 }
 
-func (s S3Provider) ListFiles(ctx context.Context, prefix string) ([]File, error) {
-	bucket := viper.GetString("S3_BUCKET")
+func (s S3Provider) GetType() string {
+	return "s3"
+}
+
+func (s S3Provider) Remove(ctx context.Context, absolutePath string) error {
+	cl, err := s.getClient()
+
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	bucket := s.getBucket()
+
+	_, err = cl.DeleteObjectWithContext(ctx, &s3.DeleteObjectInput{
+		Bucket: &bucket,
+		Key:    &absolutePath,
+	})
+
+	return err
+}
+
+func (s S3Provider) Upload(ctx context.Context, finalFilePath string, reader io.Reader) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s S3Provider) getClient() (*s3.S3, error) {
+	bucket := s.getBucket()
 
 	if len(bucket) == 0 {
 		return nil, errors.New("S3_BUCKET is empty")
@@ -68,7 +95,21 @@ func (s S3Provider) ListFiles(ctx context.Context, prefix string) ([]File, error
 		return nil, errors.WithStack(err)
 	}
 
-	cl := s3.New(ses)
+	return s3.New(ses), nil
+}
+
+func (s S3Provider) getBucket() string {
+	return viper.GetString("S3_BUCKET")
+}
+
+func (s S3Provider) List(ctx context.Context, prefix string) ([]File, error) {
+	cl, err := s.getClient()
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	bucket := s.getBucket()
 
 	resp, err := cl.ListObjectsWithContext(ctx, &s3.ListObjectsInput{
 		Bucket: &bucket,
