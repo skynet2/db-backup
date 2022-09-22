@@ -75,9 +75,23 @@ func (s S3Provider) Remove(ctx context.Context, absolutePath string) error {
 	return err
 }
 
-func (s S3Provider) Upload(ctx context.Context, finalFilePath string, reader io.Reader) error {
-	//TODO implement me
-	panic("implement me")
+func (s S3Provider) Upload(ctx context.Context, finalFilePath string, reader io.ReadSeeker) error {
+	cl, err := s.getClient()
+
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	cType := "application/binary"
+
+	_, err = cl.PutObjectWithContext(ctx, &s3.PutObjectInput{
+		Key:         &finalFilePath,
+		Bucket:      &s.s3Cfg.Bucket,
+		Body:        reader,
+		ContentType: &cType,
+	})
+
+	return errors.WithStack(err)
 }
 
 func (s S3Provider) getClient() (*s3.S3, error) {

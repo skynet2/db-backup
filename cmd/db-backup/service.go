@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/hashicorp/go-multierror"
@@ -11,6 +12,7 @@ import (
 	"github.com/skynet2/db-backup/pkg/database"
 	"github.com/skynet2/db-backup/pkg/storage"
 	"golang.org/x/exp/slices"
+	"html/template"
 	"os"
 	"path/filepath"
 	"time"
@@ -40,6 +42,8 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 	}
 
 	dbs, err := s.dbProvider.ListDatabase(ctx)
+
+	zerolog.Ctx(ctx).Info().Msgf("found databases: %v", dbs)
 
 	if err != nil {
 		return nil, err
@@ -128,7 +132,16 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 			n := time.Now().UTC()
 			job.StorageProviderType = s.storageProvider.GetType()
 			job.StorageProviderStartedAt = &n
-			job.StorageFileLocation = fmt.Sprintf("%v/%v", s.cfg.Storage.S3, fileName)
+			templatedDirRemoteDir, err := s.templateDir(s.cfg.Storage.DirTemplate, db)
+
+			if err != nil {
+				job.Error = errors.WithStack(err)
+				return
+			}
+
+			job.StorageFileLocation = fmt.Sprintf("%v/%v", templatedDirRemoteDir, fileName)
+
+			zerolog.Ctx(innerCtx).Info().Msgf("starting upload to %v", job.StorageFileLocation)
 
 			if err = s.storageProvider.Upload(ctx, job.StorageFileLocation, file); err != nil {
 				job.Error = errors.WithStack(err)
@@ -139,7 +152,10 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 			n = time.Now().UTC()
 			job.UploadEndedAt = &n
 
-			files, err := s.storageProvider.List(ctx, filePrefixName)
+			remoteKey := fmt.Sprintf("%v/%v", templatedDirRemoteDir, filePrefixName)
+			zerolog.Ctx(innerCtx).Info().Msgf("searching for files with key: %v", remoteKey)
+
+			files, err := s.storageProvider.List(ctx, remoteKey)
 
 			if err != nil {
 				job.Error = errors.WithStack(err)
@@ -150,6 +166,10 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 			filesForRemoving := s.getFilesForRemoving(innerCtx, files)
 
 			for _, toRemove := range filesForRemoving {
+				if toRemove.AbsolutePath == job.StorageFileLocation {
+					continue // should not happen
+				}
+
 				job.RemovedFiles = append(job.RemovedFiles, toRemove.AbsolutePath)
 				zerolog.Ctx(innerCtx).Info().Msgf("removing deprecated file from storage %v", toRemove.AbsolutePath)
 
@@ -163,6 +183,31 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 	return jobs, nil
 }
 
+func (s *Service) templateDir(dirTemplate string, dbName string) (string, error) {
+	compiled, err := template.New("dir").Parse(dirTemplate)
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	var buf bytes.Buffer
+
+	hostName, _ := os.Hostname()
+
+	if len(hostName) == 0 {
+		hostName = "unk"
+	}
+
+	if err = compiled.Execute(&buf, map[string]string{
+		"Host":   hostName,
+		"DbName": dbName,
+	}); err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return buf.String(), nil
+}
+
 func (s *Service) getFilesForRemoving(ctx context.Context, files []storage.File) []storage.File {
 	filesToStore := s.cfg.Storage.MaxFiles
 
@@ -174,7 +219,7 @@ func (s *Service) getFilesForRemoving(ctx context.Context, files []storage.File)
 		return nil
 	}
 
-	return files[:filesToStore]
+	return files[:len(files)-filesToStore]
 }
 
 func (s *Service) getFinalFilename(dbName string) (string, string, string) {

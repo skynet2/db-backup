@@ -6,6 +6,7 @@ import (
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigyaml"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/skynet2/db-backup/pkg/configuration"
 	"github.com/skynet2/db-backup/pkg/database"
@@ -51,6 +52,28 @@ func main() {
 
 	fmt.Println(jobs)
 	//ss := NewService(nil, nil, nil)
+}
+
+func setupZeroLog() {
+	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
+		sp := strings.Split(file, "/")
+
+		segments := 4
+
+		if len(sp) == 0 { // just in case
+			segments = 0
+		}
+
+		if segments > 0 && segments > len(sp) {
+			segments = len(sp) - 1
+		}
+
+		return fmt.Sprintf("%s:%v", strings.Join(sp[segments:], "/"), line)
+	}
+
+	log.Logger = log.Logger.With().Caller().Logger()
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	zerolog.DefaultContextLogger = &log.Logger
 }
 
 func getDbProvider(cfg configuration.DbConfiguration) (database.Provider, error) {

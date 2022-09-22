@@ -14,10 +14,10 @@ type DbConfiguration struct {
 }
 
 type StorageConfiguration struct {
-	Provider string
-	Dir      string
-	MaxFiles int
-	S3       S3Config `yaml:"s3"`
+	Provider    string
+	DirTemplate string
+	MaxFiles    int
+	S3          S3Config `yaml:"s3"`
 }
 
 type PostgresConfiguration struct {

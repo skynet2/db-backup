@@ -75,12 +75,11 @@ func (p PostgresProvider) BackupDatabase(
 	finalFileName string,
 ) (string, error) {
 	cmd := exec.Command("pg_dump",
-		"-F p",
-		fmt.Sprintf("-U %v", p.cfg.User),
-		fmt.Sprintf("-h %v", p.cfg.Host),
-		fmt.Sprintf("-f %v", finalFileName),
-		fmt.Sprintf("-Z %v", p.getCompressionLevel()),
-		fmt.Sprintf("-d %v", databaseName),
+		fmt.Sprintf("--username=%v", p.cfg.User),
+		fmt.Sprintf("--host=%v", p.cfg.Host),
+		fmt.Sprintf("--file=%v", finalFileName),
+		fmt.Sprintf("--compress=%v", p.getCompressionLevel()),
+		fmt.Sprintf("--dbname=%v", databaseName),
 	)
 
 	dbPassword := p.cfg.Password

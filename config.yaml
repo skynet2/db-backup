@@ -13,7 +13,7 @@ db:
     tls_enabled: false
 storage:
   provider: s3
-  dir: ""
+  dir_template: ""
   max_files: 5
   s3:
     region: "nl-eu"
