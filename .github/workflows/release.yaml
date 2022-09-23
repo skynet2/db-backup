@@ -1,5 +1,4 @@
 on:
-  pull_request:
   push:
     branches:
       - master
@@ -20,7 +19,7 @@ jobs:
         id: create_release
         with:
           draft: false
-          prerelease: true
+          prerelease: false
           release_name: ${{ steps.version.outputs.version }}
           tag_name: v.0.0.${{ github.run_number }}
         env:
