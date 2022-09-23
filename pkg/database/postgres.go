@@ -102,12 +102,6 @@ func (p PostgresProvider) GetType() string {
 }
 
 func (p PostgresProvider) getConnection(ctx context.Context) (*pgx.Conn, error) {
-	dbPort := p.cfg.Port
-
-	if dbPort == 0 {
-		dbPort = 5432
-	}
-
 	defaultDbName := p.cfg.DbDefaultName
 
 	if len(defaultDbName) == 0 {
