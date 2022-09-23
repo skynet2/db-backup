@@ -16,4 +16,5 @@ type Job struct {
 	FileLocation             string
 	Output                   string
 	RemovedFiles             []string
+	FileSize                 int64
 }

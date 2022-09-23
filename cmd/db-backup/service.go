@@ -141,6 +141,10 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 
 			job.StorageFileLocation = fmt.Sprintf("%v/%v", templatedDirRemoteDir, fileName)
 
+			if info, _ := file.Stat(); info.Size() > 0 {
+				job.FileSize = info.Size()
+			}
+
 			zerolog.Ctx(innerCtx).Info().Msgf("starting upload to %v", job.StorageFileLocation)
 
 			if err = s.storageProvider.Upload(ctx, job.StorageFileLocation, file); err != nil {

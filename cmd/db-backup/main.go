@@ -10,21 +10,30 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/skynet2/db-backup/pkg/configuration"
 	"github.com/skynet2/db-backup/pkg/database"
+	"github.com/skynet2/db-backup/pkg/notifier"
 	"github.com/skynet2/db-backup/pkg/storage"
 	"strings"
 )
 
 func main() {
+	setupZeroLog()
 	cfg := configuration.Configuration{}
 
 	if err := aconfig.LoaderFor(&cfg, aconfig.Config{
-		Files:      []string{"./config.yaml", "./config.local.yaml"},
-		MergeFiles: true,
+		Files:              []string{"./config.yaml", "./config.local.yaml"},
+		MergeFiles:         true,
+		AllowUnknownFields: true,
 		FileDecoders: map[string]aconfig.FileDecoder{
 			".yaml": aconfigyaml.New(),
 			".yml":  aconfigyaml.New(),
 		},
 	}).Load(); err != nil {
+		log.Fatal().Err(err).Send()
+	}
+
+	notifyService, err := notifier.NewDefaultService(cfg.Notifications)
+
+	if err != nil {
 		log.Fatal().Err(err).Send()
 	}
 
@@ -47,11 +56,20 @@ func main() {
 	jobs, err := service.Process(ctx)
 
 	if err != nil {
+		if innerErr := notifyService.SendError(ctx, err); innerErr != nil {
+			log.Err(err).Send()
+		}
+
 		log.Fatal().Err(err).Send()
 	}
 
-	fmt.Println(jobs)
-	//ss := NewService(nil, nil, nil)
+	if err = notifyService.SendResults(ctx, jobs); err != nil {
+		if innerErr := notifyService.SendError(ctx, err); innerErr != nil {
+			log.Err(err).Send()
+		}
+
+		log.Err(err).Send()
+	}
 }
 
 func setupZeroLog() {

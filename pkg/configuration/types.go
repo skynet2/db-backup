@@ -1,10 +1,21 @@
 package configuration
 
 type Configuration struct {
-	IncludeDbs []string // not empty -> include only specified dbs
-	ExcludeDbs []string // not empty -> exclude databases
-	Db         DbConfiguration
-	Storage    StorageConfiguration
+	IncludeDbs    []string // not empty -> include only specified dbs
+	ExcludeDbs    []string // not empty -> exclude databases
+	Db            DbConfiguration
+	Storage       StorageConfiguration
+	Notifications NotificationConfiguration
+}
+
+type NotificationConfiguration struct {
+	Success NotificationMode
+	Fail    NotificationMode
+}
+
+type NotificationMode struct {
+	Channels []NotificationChannelConfig
+	Template string
 }
 
 type DbConfiguration struct {
@@ -39,4 +50,10 @@ type S3Config struct {
 
 	DisableSsl     bool
 	ForcePathStyle bool
+}
+
+type NotificationChannelConfig struct {
+	Type  string `yaml:"type"`
+	Token string `yaml:"access_token"`
+	Chat  string `yaml:"chat_id"`
 }
