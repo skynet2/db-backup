@@ -1,0 +1,36 @@
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    container: golang:1.19-alpine
+    steps:
+      - uses: actions/checkout@v2
+      - run: go mod vendor
+      - run: mkdir dist
+      - run: cd cmd/db-backup && GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o ../../dist/db-backup
+      - run: cp config.yaml dist/
+      - run: tar cf db-backup.tar -C dist .
+      - name: release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: true
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: v.0.0.${{ github.run_number }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: upload linux artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: db-backup.tar
+          asset_name: db-backup.tar
+          asset_content_type: application/octet-stream
