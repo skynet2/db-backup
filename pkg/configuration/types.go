@@ -53,7 +53,8 @@ type S3Config struct {
 }
 
 type NotificationChannelConfig struct {
-	Type  string `yaml:"type"`
-	Token string `yaml:"access_token"`
-	Chat  string `yaml:"chat_id"`
+	Type    string `yaml:"type"`
+	Token   string `yaml:"access_token"`
+	Chat    string `yaml:"chat_id"`
+	Webhook string `json:"webhook"`
 }
