@@ -13,6 +13,8 @@ func createChannel(cfg configuration.NotificationChannelConfig) (Channel, error)
 	switch chType {
 	case "telegram":
 		return NewTelegramChannel(cfg.Chat, cfg.Token), nil
+	case "discord":
+		return NewDiscordChannel(cfg.Webhook), nil
 	default:
 		return nil, errors.New(fmt.Sprintf("no implementation for notification provider %v", chType))
 	}

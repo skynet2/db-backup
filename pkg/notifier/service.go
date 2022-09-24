@@ -107,8 +107,8 @@ Destination: {{.destination}}
 
 Databases:
 {{ range $key, $value := .databases }}
-{{ $key }}: completed in {{ $value.completed_in}}.{{if $value.size }} Size {{$value.size}}.{{end}} {{ if $value.error }}Error : $value.error {{end}}
-{{ end }}`
+{{ $key }}: completed in {{ $value.completed_in}}.{{if $value.size }} Size {{$value.size}}.{{end}} {{ if $value.error }}Error : $value.error {{end}}{{ end }}
+`
 	}
 
 	compiled, err := template.New("dir").Parse(templateStr)
