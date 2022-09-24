@@ -13,7 +13,7 @@ jobs:
       - run: mkdir dist
       - run: cd cmd/db-backup && GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o ../../dist/db-backup
       - run: cp config.yaml dist/
-      - run: tar cf db-backup.tar -C dist .
+      - run: tar cf db-backup.tar dist/
       - name: release
         uses: actions/create-release@v1
         id: create_release
