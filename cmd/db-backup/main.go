@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/cristalhq/aconfig"
+	"github.com/cristalhq/aconfig/aconfigdotenv"
 	"github.com/cristalhq/aconfig/aconfigyaml"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -22,13 +24,22 @@ func main() {
 
 	cfg := configuration.Configuration{}
 
+	configFiles := []string{
+		"./config.yaml",
+		"./config.local.yaml",
+	}
+
+	if v := os.Getenv("ADDITIONAL_CONFIGS"); v != "" {
+		configFiles = append(configFiles, strings.Split(v, ",")...)
+	}
 	if err := aconfig.LoaderFor(&cfg, aconfig.Config{
-		Files:              []string{"./config.yaml", "./config.local.yaml"},
+		Files:              configFiles,
 		MergeFiles:         true,
 		AllowUnknownFields: true,
 		FileDecoders: map[string]aconfig.FileDecoder{
 			".yaml": aconfigyaml.New(),
 			".yml":  aconfigyaml.New(),
+			".env":  aconfigdotenv.New(),
 		},
 	}).Load(); err != nil {
 		log.Fatal().Err(err).Send()

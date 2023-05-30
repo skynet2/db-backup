@@ -16,6 +16,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/cristalhq/aconfig v0.17.0/go.mod h1:NXaRp+1e6bkO4dJn+wZ71xyaihMDYPtCSvEhMTm/H3E=
 github.com/cristalhq/aconfig v0.18.1 h1:6QJoQETERZSR83bD73DwuEwCb9KzMFr/r1zP1QQ/xMk=
 github.com/cristalhq/aconfig v0.18.1/go.mod h1:NXaRp+1e6bkO4dJn+wZ71xyaihMDYPtCSvEhMTm/H3E=
+github.com/cristalhq/aconfig/aconfigdotenv v0.17.1 h1:HG2ql5fGe4FLL2fUv6o+o0YRyF1mWEcYkNfWGWD82k4=
+github.com/cristalhq/aconfig/aconfigdotenv v0.17.1/go.mod h1:gQIKkh+HkVcODvMNz/cLbH65Pk9b0r4tfolCOsI8G9I=
 github.com/cristalhq/aconfig/aconfigyaml v0.17.1 h1:xCCbRKVmKrft9gQj3gHOq6U5PduasvlXEIsxtyzmFZ0=
 github.com/cristalhq/aconfig/aconfigyaml v0.17.1/go.mod h1:5DTsjHkvQ6hfbyxfG32roB1lF0U82rROtFaLxibL8V8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -90,6 +92,8 @@ github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9Y
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1 h1:shLQSRRSCCPj3f2gpwzGwWFoC7ycTf1rcQZHOlsJ6N8=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfCI6z80xFu9LTZmf1ZRjMHUOPmWr69U=
+github.com/joho/godotenv v1.4.0 h1:3l4+N6zfMWnkbPEXKng2o2/MR5mSwTrBih4ZEkkz1lg=
+github.com/joho/godotenv v1.4.0/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=

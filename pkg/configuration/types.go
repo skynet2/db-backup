@@ -4,7 +4,7 @@ type Configuration struct {
 	IncludeDbs    []string // not empty -> include only specified dbs
 	ExcludeDbs    []string // not empty -> exclude databases
 	Db            DbConfiguration
-	Storage       StorageConfiguration
+	Storage       StorageConfiguration `env:"STORAGE"`
 	Notifications NotificationConfiguration
 	Metrics       Metrics
 }
@@ -34,27 +34,27 @@ type StorageConfiguration struct {
 	Provider    string
 	DirTemplate string
 	MaxFiles    int
-	S3          S3Config `yaml:"s3"`
+	S3          S3Config `yaml:"s3" env:"S3"`
 }
 
 type PostgresConfiguration struct {
-	Host             string `env:"POSTGRES_HOST"`
-	Port             int    `env:"POSTGRES_PORT"`
-	User             string `env:"POSTGRES_USER"`
-	Password         string `env:"POSTGRES_PASSWORD"`
-	DbDefaultName    string `env:"POSTGRES_DB_DEFAULT_NAME"`
-	TlsEnabled       bool   `env:"POSTGRES_TLS_ENABLED"`
-	CompressionLevel int    `env:"POSTGRES_COMPRESSION_LEVEL"`
+	Host             string `env:"HOST"`
+	Port             int    `env:"PORT"`
+	User             string `env:"USER"`
+	Password         string `env:"PASSWORD"`
+	DbDefaultName    string `env:"DB_DEFAULT_NAME"`
+	TlsEnabled       bool   `env:"TLS_ENABLED"`
+	CompressionLevel int    `env:"COMPRESSION_LEVEL"`
 }
 
 type S3Config struct {
-	Region         string `env:"S3_REGION"`
-	Endpoint       string `env:"S3_ENDPOINT"`
-	Bucket         string `env:"S3_BUCKET"`
-	AccessKey      string `env:"S3_ACCESS_KEY"`
-	SecretKey      string `env:"S3_SECRET_KEY"`
-	DisableSsl     bool   `env:"S3_DISABLE_SSL"`
-	ForcePathStyle bool   `env:"S3_FORCE_PATH_STYLE"`
+	Region         string `env:"REGION"`
+	Endpoint       string `env:"ENDPOINT"`
+	Bucket         string `env:"BUCKET"`
+	AccessKey      string `env:"ACCESS_KEY"`
+	SecretKey      string `env:"SECRET_KEY"`
+	DisableSsl     bool   `env:"DISABLE_SSL"`
+	ForcePathStyle bool   `env:"FORCE_PATH_STYLE"`
 }
 
 type NotificationChannelConfig struct {
