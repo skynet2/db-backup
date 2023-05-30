@@ -4,3 +4,5 @@
 config.local.yaml
 
 cmd/db-backup/out
+
+dist
