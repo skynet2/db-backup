@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
-	"github.com/skynet2/db-backup/pkg/common"
-	"github.com/skynet2/db-backup/pkg/configuration"
-	"github.com/skynet2/db-backup/pkg/database"
-	"github.com/skynet2/db-backup/pkg/storage"
-	"golang.org/x/exp/slices"
 	"html/template"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"golang.org/x/exp/slices"
+
+	"github.com/skynet2/db-backup/pkg/common"
+	"github.com/skynet2/db-backup/pkg/configuration"
+	"github.com/skynet2/db-backup/pkg/database"
+	"github.com/skynet2/db-backup/pkg/storage"
 )
 
 type Service struct {
@@ -58,6 +60,7 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 	var finalErrors error
 	var jobs []common.Job
 
+	jobName := "todo"
 	for _, db := range dbs {
 		func() {
 			job := common.Job{
@@ -78,6 +81,11 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 
 				if job.Error != nil {
 					zerolog.Ctx(innerCtx).Err(err).Send()
+					failTotalCounter.WithLabelValues(jobName).Inc()
+					failPerDbCounter.WithLabelValues(jobName, db).Inc()
+				} else {
+					successTotalCounter.WithLabelValues(jobName).Inc()
+					successPerDbCounter.WithLabelValues(jobName, db).Inc()
 				}
 
 				jobs = append(jobs, job)

@@ -6,6 +6,12 @@ type Configuration struct {
 	Db            DbConfiguration
 	Storage       StorageConfiguration
 	Notifications NotificationConfiguration
+	Metrics       Metrics
+}
+
+type Metrics struct {
+	PrometheusPushGatewayUrl string `env:"PROMETHEUS_PUSH_GATEWAY_URL"`
+	PrometheusJobName        string `env:"PROMETHEUS_JOB_NAME"`
 }
 
 type NotificationConfiguration struct {
@@ -32,29 +38,28 @@ type StorageConfiguration struct {
 }
 
 type PostgresConfiguration struct {
-	Host             string
-	Port             int
-	User             string
-	Password         string
-	DbDefaultName    string
-	TlsEnabled       bool
-	CompressionLevel int
+	Host             string `env:"POSTGRES_HOST"`
+	Port             int    `env:"POSTGRES_PORT"`
+	User             string `env:"POSTGRES_USER"`
+	Password         string `env:"POSTGRES_PASSWORD"`
+	DbDefaultName    string `env:"POSTGRES_DB_DEFAULT_NAME"`
+	TlsEnabled       bool   `env:"POSTGRES_TLS_ENABLED"`
+	CompressionLevel int    `env:"POSTGRES_COMPRESSION_LEVEL"`
 }
 
 type S3Config struct {
-	Region    string
-	Endpoint  string
-	Bucket    string
-	AccessKey string
-	SecretKey string
-
-	DisableSsl     bool
-	ForcePathStyle bool
+	Region         string `env:"S3_REGION"`
+	Endpoint       string `env:"S3_ENDPOINT"`
+	Bucket         string `env:"S3_BUCKET"`
+	AccessKey      string `env:"S3_ACCESS_KEY"`
+	SecretKey      string `env:"S3_SECRET_KEY"`
+	DisableSsl     bool   `env:"S3_DISABLE_SSL"`
+	ForcePathStyle bool   `env:"S3_FORCE_PATH_STYLE"`
 }
 
 type NotificationChannelConfig struct {
-	Type    string `yaml:"type"`
-	Token   string `yaml:"access_token"`
-	Chat    string `yaml:"chat_id"`
-	Webhook string `json:"webhook"`
+	Type    string `yaml:"type" env:"NOTIFICATION_CHANNEL_TYPE"`
+	Token   string `yaml:"access_token" env:"NOTIFICATION_CHANNEL_ACCESS_TOKEN"`
+	Chat    string `yaml:"chat_id" env:"NOTIFICATION_CHANNEL_CHAT_ID"`
+	Webhook string `json:"webhook" env:"NOTIFICATION_CHANNEL_WEBHOOK"`
 }
