@@ -10,8 +10,8 @@ type Configuration struct {
 }
 
 type Metrics struct {
-	PrometheusPushGatewayUrl string `env:"PROMETHEUS_PUSH_GATEWAY_URL"`
-	PrometheusJobName        string `env:"PROMETHEUS_JOB_NAME"`
+	PrometheusPushGatewayUrl string `yaml:"prometheus_push_gateway_url" env:"PROMETHEUS_PUSH_GATEWAY_URL"`
+	PrometheusJobName        string `yaml:"prometheus_job_name" env:"PROMETHEUS_JOB_NAME"`
 }
 
 type NotificationConfiguration struct {
