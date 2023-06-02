@@ -3,33 +3,53 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/cristalhq/aconfig"
+	"github.com/cristalhq/aconfig/aconfigdotenv"
 	"github.com/cristalhq/aconfig/aconfigyaml"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
 	"github.com/skynet2/db-backup/pkg/configuration"
 	"github.com/skynet2/db-backup/pkg/database"
 	"github.com/skynet2/db-backup/pkg/notifier"
 	"github.com/skynet2/db-backup/pkg/storage"
-	"strings"
 )
 
 func main() {
 	setupZeroLog()
+	registerMetrics()
+
 	cfg := configuration.Configuration{}
 
+	configFiles := []string{
+		"./config.yaml",
+		"./config.local.yaml",
+	}
+
+	if v := os.Getenv("ADDITIONAL_CONFIGS"); v != "" {
+		configFiles = append(configFiles, strings.Split(v, ",")...)
+	}
 	if err := aconfig.LoaderFor(&cfg, aconfig.Config{
-		Files:              []string{"./config.yaml", "./config.local.yaml"},
+		Files:              configFiles,
 		MergeFiles:         true,
 		AllowUnknownFields: true,
 		FileDecoders: map[string]aconfig.FileDecoder{
 			".yaml": aconfigyaml.New(),
 			".yml":  aconfigyaml.New(),
+			".env":  aconfigdotenv.New(),
 		},
 	}).Load(); err != nil {
 		log.Fatal().Err(err).Send()
 	}
+
+	defer func() {
+		if pushErr := pushMetrics(cfg.Metrics.PrometheusPushGatewayUrl, cfg.Metrics.PrometheusJobName); pushErr != nil {
+			log.Err(pushErr).Send()
+		}
+	}()
 
 	notifyService, err := notifier.NewDefaultService(cfg.Notifications)
 
@@ -70,28 +90,6 @@ func main() {
 
 		log.Err(err).Send()
 	}
-}
-
-func setupZeroLog() {
-	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
-		sp := strings.Split(file, "/")
-
-		segments := 4
-
-		if len(sp) == 0 { // just in case
-			segments = 0
-		}
-
-		if segments > 0 && segments > len(sp) {
-			segments = len(sp) - 1
-		}
-
-		return fmt.Sprintf("%s:%v", strings.Join(sp[segments:], "/"), line)
-	}
-
-	log.Logger = log.Logger.With().Caller().Logger()
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	zerolog.DefaultContextLogger = &log.Logger
 }
 
 func getDbProvider(cfg configuration.DbConfiguration) (database.Provider, error) {

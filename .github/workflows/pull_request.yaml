@@ -28,13 +28,12 @@ jobs:
       ENVIRONMENT: ci
     needs: [ download ]
     steps:
-      - run: apk add build-base
       - uses: actions/download-artifact@v2
         with:
           path: /source
           name: code
       - run: ls /source/
-      - run: apt-get update && apt-get install curl openssl git openssh-client build-base && mkdir -p /root/.ssh && mkdir -p /source
+      - run: apt-get update && apt-get install curl openssl git openssh-client build-essential -y && mkdir -p /root/.ssh && mkdir -p /source
       - run: cd /source && go mod vendor
       - run: wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /source/
         if: github.ref != 'refs/heads/master'

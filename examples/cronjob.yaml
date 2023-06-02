@@ -1,0 +1,53 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-backup-base-config
+data:
+  config.yaml: |
+    include_dbs:
+      - config
+      - master
+    db:
+      provider: postgres
+      dump_dir: ""
+      postgres:
+        host: 127.0.0.1
+        port: 5432
+        user: postgres
+        password: postgres
+        db_default_name: postgres
+        tls_enabled: false
+    storage:
+      provider: s3
+      dir_template: ""
+      max_files: 5
+      s3:
+        region: "nl-eu"
+        endpoint: ""
+        bucket: ""
+        access_key: ""
+        secret_key: ""
+        disable_ssl: true
+        force_path_style: false
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: backup-job
+              image: skydev/db-backup:0.0.0.1-pg14
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                -
+              env:
+                - name: PROMETHEUS_PUSH_GATEWAY_URL
+                  value: http://prometheus-pushgateway.prometheus.svc.cluster.local:9091
+          restartPolicy: OnFailure
