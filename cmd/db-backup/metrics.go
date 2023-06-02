@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
+	"github.com/prometheus/common/expfmt"
 )
 
 var (
@@ -56,5 +57,6 @@ func pushMetrics(prometheusPushGatewayUrl string, jobName string) error {
 		Collector(failTotalCounter).
 		Collector(successPerDbCounter).
 		Collector(failPerDbCounter).
+		Format(expfmt.FmtText).
 		Push()
 }
