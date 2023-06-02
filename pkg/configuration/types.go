@@ -1,12 +1,12 @@
 package configuration
 
 type Configuration struct {
-	IncludeDbs    []string // not empty -> include only specified dbs
-	ExcludeDbs    []string // not empty -> exclude databases
-	Db            DbConfiguration
-	Storage       StorageConfiguration `env:"STORAGE"`
-	Notifications NotificationConfiguration
-	Metrics       Metrics
+	IncludeDbs    []string                  `env:"INCLUDE_DBS"` // not empty -> include only specified dbs
+	ExcludeDbs    []string                  `env:"EXCLUDE_DBS"` // not empty -> exclude databases
+	Db            DbConfiguration           `env:"DB"`
+	Storage       StorageConfiguration      `env:"STORAGE"`
+	Notifications NotificationConfiguration `env:"NOTIFICATIONS"`
+	Metrics       Metrics                   `env:"METRICS"`
 }
 
 type Metrics struct {
@@ -15,25 +15,25 @@ type Metrics struct {
 }
 
 type NotificationConfiguration struct {
-	Success NotificationMode
-	Fail    NotificationMode
+	Success NotificationMode `env:"SUCCESS"`
+	Fail    NotificationMode `env:"FAIL"`
 }
 
 type NotificationMode struct {
-	Channels []NotificationChannelConfig
-	Template string
+	Channels []NotificationChannelConfig `env:"CHANNELS"`
+	Template string                      `env:"TEMPLATE"`
 }
 
 type DbConfiguration struct {
-	Provider string
-	DumpDir  string
-	Postgres PostgresConfiguration
+	Provider string                `env:"PROVIDER"`
+	DumpDir  string                `env:"DUMP_DIR"`
+	Postgres PostgresConfiguration `env:"POSTGRES"`
 }
 
 type StorageConfiguration struct {
-	Provider    string
-	DirTemplate string
-	MaxFiles    int
+	Provider    string   `env:"PROVIDER"`
+	DirTemplate string   `env:"DIR_TEMPLATE"`
+	MaxFiles    int      `env:"MAX_FILES"`
 	S3          S3Config `yaml:"s3" env:"S3"`
 }
 
