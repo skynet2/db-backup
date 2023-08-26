@@ -9,6 +9,7 @@ import (
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigdotenv"
 	"github.com/cristalhq/aconfig/aconfigyaml"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
@@ -32,6 +33,9 @@ func main() {
 	if v := os.Getenv("ADDITIONAL_CONFIGS"); v != "" {
 		configFiles = append(configFiles, strings.Split(v, ",")...)
 	}
+
+	log.Info().Msgf("using additional configuration files: %v", spew.Sdump(configFiles))
+
 	if err := aconfig.LoaderFor(&cfg, aconfig.Config{
 		Files:              configFiles,
 		MergeFiles:         true,

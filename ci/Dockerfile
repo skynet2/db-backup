@@ -1,9 +1,11 @@
+ARG PG_VERSION
+
 FROM golang:1.20-alpine as builder
 ADD ./ /src
 WORKDIR /src
 RUN mkdir /dist && go build -o /dist/db-backup ./cmd/db-backup/
 
-FROM postgres:14-alpine
+FROM postgres:${PG_VERSION}-alpine
 RUN mkdir /backup
 COPY --from=builder /dist /backup
 WORKDIR /backup

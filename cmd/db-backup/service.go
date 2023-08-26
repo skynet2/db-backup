@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
 
 	"github.com/skynet2/db-backup/pkg/common"
@@ -140,7 +141,7 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 			n := time.Now().UTC()
 			job.StorageProviderType = s.storageProvider.GetType()
 			job.StorageProviderStartedAt = &n
-			templatedDirRemoteDir, err := s.templateDir(s.cfg.Storage.DirTemplate, db)
+			templatedDirRemoteDir, err := s.templateDir(s.cfg.Storage.DirTemplate, db, s.cfg.Storage.DirTemplate)
 
 			if err != nil {
 				job.Error = errors.WithStack(err)
@@ -192,10 +193,22 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 		}()
 	}
 
+	for _, j := range jobs {
+		if j.Error == nil {
+			continue
+		}
+
+		log.Err(errors.Wrapf(j.Error, "got error while processing db: %v", j.DatabaseName)).Send()
+	}
+
 	return jobs, nil
 }
 
-func (s *Service) templateDir(dirTemplate string, dbName string) (string, error) {
+func (s *Service) templateDir(
+	dirTemplate string,
+	dbName string,
+	prefix string,
+) (string, error) {
 	compiled, err := template.New("dir").Parse(dirTemplate)
 
 	if err != nil {
@@ -213,6 +226,7 @@ func (s *Service) templateDir(dirTemplate string, dbName string) (string, error)
 	if err = compiled.Execute(&buf, map[string]string{
 		"Host":   hostName,
 		"DbName": dbName,
+		"Prefix": prefix,
 	}); err != nil {
 		return "", errors.WithStack(err)
 	}

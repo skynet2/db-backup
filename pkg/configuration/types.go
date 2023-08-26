@@ -33,6 +33,7 @@ type DbConfiguration struct {
 type StorageConfiguration struct {
 	Provider    string   `env:"PROVIDER"`
 	DirTemplate string   `env:"DIR_TEMPLATE"`
+	Prefix      string   `env:"PREFIX"`
 	MaxFiles    int      `env:"MAX_FILES"`
 	S3          S3Config `yaml:"s3" env:"S3"`
 }
