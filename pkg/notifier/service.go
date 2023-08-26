@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
-	"github.com/skynet2/db-backup/pkg/common"
-	"github.com/skynet2/db-backup/pkg/configuration"
 	"os"
 	"strconv"
 	"text/template"
+
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+
+	"github.com/skynet2/db-backup/pkg/common"
+	"github.com/skynet2/db-backup/pkg/configuration"
 )
 
 type DefaultService struct {
@@ -107,7 +109,7 @@ Destination: {{.destination}}
 
 Databases:
 {{ range $key, $value := .databases }}
-{{ $key }}: completed in {{ $value.completed_in}}.{{if $value.size }} Size {{$value.size}}.{{end}} {{ if $value.error }}Error : $value.error {{end}}{{ end }}
+{{ $key }}: completed in {{ $value.completed_in}}.{{if $value.size }} Size {{$value.size}}.{{end}} {{ if $value.error }}Error : {{$value.error}} {{end}}{{ end }}
 `
 	}
 

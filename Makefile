@@ -1,4 +1,4 @@
-VERSION 					?=v1.0.1
+VERSION 					?=v1.0.3
 PG_VERSION 					?=15
 
 .PHONY: docker

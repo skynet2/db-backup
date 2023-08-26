@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"os/exec"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
+
 	"github.com/skynet2/db-backup/pkg/configuration"
-	"os/exec"
 )
 
 type PostgresProvider struct {
@@ -91,7 +93,7 @@ func (p PostgresProvider) BackupDatabase(
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		return string(output), errors.WithStack(err)
+		return string(output), errors.Wrap(err, string(output))
 	}
 
 	return string(output), nil

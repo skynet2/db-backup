@@ -141,7 +141,7 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 			n := time.Now().UTC()
 			job.StorageProviderType = s.storageProvider.GetType()
 			job.StorageProviderStartedAt = &n
-			templatedDirRemoteDir, err := s.templateDir(s.cfg.Storage.DirTemplate, db, s.cfg.Storage.DirTemplate)
+			templatedDirRemoteDir, err := s.templateDir(s.cfg.Storage.DirTemplate, db, s.cfg.Storage.Prefix)
 
 			if err != nil {
 				job.Error = errors.WithStack(err)
