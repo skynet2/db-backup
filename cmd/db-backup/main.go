@@ -20,6 +20,7 @@ import (
 )
 
 func main() {
+	// trigger build
 	setupZeroLog()
 	registerMetrics()
 

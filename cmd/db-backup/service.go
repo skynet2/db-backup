@@ -76,12 +76,12 @@ func (s *Service) Process(ctx context.Context) ([]common.Job, error) {
 			innerCtx = innerLogger.WithContext(innerCtx)
 
 			defer func() {
-				cancel()
+				defer cancel()
 
 				job.EndAt = time.Now().UTC()
 
 				if job.Error != nil {
-					zerolog.Ctx(innerCtx).Err(err).Send()
+					zerolog.Ctx(innerCtx).Err(job.Error).Send()
 					failTotalCounter.WithLabelValues(jobName).Inc()
 					failPerDbCounter.WithLabelValues(jobName, db).Inc()
 				} else {
