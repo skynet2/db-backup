@@ -6,9 +6,10 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    container: golang:1.19-bullseye
+    container: golang:bookworm
     steps:
       - uses: actions/checkout@v2
+      - run: apt-get update && apt-get install -y git
       - run: go mod vendor
       - run: mkdir dist
       - run: cd cmd/db-backup && GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o ../../dist/db-backup
