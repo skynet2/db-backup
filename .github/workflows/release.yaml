@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: go mod vendor
       - run: mkdir dist
-      - run: GOFLAGS=-buildvcs=false cd cmd/db-backup && GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o ../../dist/db-backup
+      - run: cd cmd/db-backup && GOOS=linux GOARCH=amd64 go build -buildvcs=false -ldflags "-s -w" -o ../../dist/db-backup
       - run: cp config.yaml dist/
       - run: tar cf db-backup.tar dist/
       - name: release
