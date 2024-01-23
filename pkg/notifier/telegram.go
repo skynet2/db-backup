@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
+
+	"github.com/cockroachdb/errors"
 )
 
 type TelegramChannel struct {

@@ -1,14 +1,31 @@
 package storage
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"os"
+	"strconv"
+
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
+	"github.com/rs/zerolog"
+	"github.com/samber/lo"
+
 	"github.com/skynet2/db-backup/pkg/configuration"
-	"io"
+)
+
+var (
+	maxPartSize      = int64(1 * 1024 * 1024 * 1024) // 1 GB
+	minMultipartSize = int64(3 * 1024 * 1024 * 1024) // 3 GB
+)
+
+const (
+	maxRetries = 3
 )
 
 type S3Provider struct {
@@ -75,23 +92,155 @@ func (s S3Provider) Remove(ctx context.Context, absolutePath string) error {
 	return err
 }
 
-func (s S3Provider) Upload(ctx context.Context, finalFilePath string, reader io.ReadSeeker) error {
-	cl, err := s.getClient()
-
+func (s S3Provider) Upload(
+	ctx context.Context,
+	finalFilePath string,
+	file *os.File,
+) error {
+	fileStat, err := file.Stat()
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
-	cType := "application/binary"
+	if fileStat.Size() < minMultipartSize {
+		zerolog.Ctx(ctx).Info().Msgf("Uploading file %v using simple upload", finalFilePath)
+		return s.simpleUpload(ctx, finalFilePath, file)
+	}
+
+	zerolog.Ctx(ctx).Info().Msgf("Uploading file %s using multipart upload", finalFilePath)
+	return s.multiPartUpload(ctx, finalFilePath, file)
+}
+
+func (s S3Provider) multiPartUpload(
+	ctx context.Context,
+	finalFilePath string,
+	reader *os.File,
+) error {
+	cl, err := s.getClient()
+	if err != nil {
+		return err
+	}
+
+	input := &s3.CreateMultipartUploadInput{
+		Bucket:      &s.s3Cfg.Bucket,
+		Key:         lo.ToPtr(finalFilePath),
+		ContentType: lo.ToPtr("application/binary"),
+	}
+
+	resp, err := cl.CreateMultipartUpload(input)
+	if err != nil {
+		return err
+	}
+
+	buffer := make([]byte, maxPartSize)
+	partNumber := 1
+	for {
+		n, readErr := reader.Read(buffer)
+		if readErr != nil {
+			if errors.Is(readErr, io.EOF) {
+				break
+			}
+
+			return readErr
+		}
+
+		toUpload := buffer
+		if int64(n) < maxPartSize {
+			toUpload = buffer[:n]
+		}
+
+		_, uploadPartErr := s.uploadPart(ctx, cl, resp, toUpload, partNumber)
+		if uploadPartErr != nil {
+			err = s.abortMultipartUpload(ctx, cl, resp)
+			if err != nil {
+				uploadPartErr = errors.Join(uploadPartErr, errors.WithStack(err))
+			}
+
+			return uploadPartErr
+		}
+		partNumber += 1
+	}
+
+	return nil
+}
+
+func (s S3Provider) abortMultipartUpload(
+	ctx context.Context,
+	svc *s3.S3,
+	resp *s3.CreateMultipartUploadOutput,
+) error {
+	zerolog.Ctx(ctx).Warn().Msg("Aborting multipart upload for UploadId#" + *resp.UploadId)
+	abortInput := &s3.AbortMultipartUploadInput{
+		Bucket:   resp.Bucket,
+		Key:      resp.Key,
+		UploadId: resp.UploadId,
+	}
+
+	_, err := svc.AbortMultipartUploadWithContext(ctx, abortInput)
+	return err
+}
+
+func (s S3Provider) uploadPart(
+	ctx context.Context,
+	svc *s3.S3,
+	resp *s3.CreateMultipartUploadOutput,
+	fileBytes []byte,
+	partNumber int,
+) (*s3.CompletedPart, error) {
+	tryNum := 1
+	partInput := &s3.UploadPartInput{
+		Body:          bytes.NewReader(fileBytes),
+		Bucket:        resp.Bucket,
+		Key:           resp.Key,
+		PartNumber:    aws.Int64(int64(partNumber)),
+		UploadId:      resp.UploadId,
+		ContentLength: aws.Int64(int64(len(fileBytes))),
+	}
+
+	for tryNum <= maxRetries {
+		uploadResult, err := svc.UploadPartWithContext(ctx, partInput)
+		if err != nil {
+			if tryNum == maxRetries {
+				var awsErr awserr.Error
+				if errors.As(err, &awsErr) {
+					return nil, awsErr
+				}
+
+				return nil, err
+			}
+			zerolog.Ctx(ctx).Warn().Msg("Retrying to upload part #" + strconv.Itoa(partNumber))
+			tryNum++
+		} else {
+			zerolog.Ctx(ctx).Debug().Msgf("Uploaded part %v for %v", partNumber, *resp.Key)
+
+			return &s3.CompletedPart{
+				ETag:       uploadResult.ETag,
+				PartNumber: aws.Int64(int64(partNumber)),
+			}, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (s S3Provider) simpleUpload(
+	ctx context.Context,
+	finalFilePath string,
+	reader io.ReadSeeker,
+) error {
+	cl, err := s.getClient()
+	if err != nil {
+		return err
+	}
 
 	_, err = cl.PutObjectWithContext(ctx, &s3.PutObjectInput{
 		Key:         &finalFilePath,
 		Bucket:      &s.s3Cfg.Bucket,
 		Body:        reader,
-		ContentType: &cType,
+		ContentType: lo.ToPtr("application/binary"),
 	})
 
-	return errors.WithStack(err)
+	return err
 }
 
 func (s S3Provider) getClient() (*s3.S3, error) {

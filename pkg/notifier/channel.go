@@ -2,9 +2,11 @@ package notifier
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/skynet2/db-backup/pkg/configuration"
 	"strings"
+
+	"github.com/cockroachdb/errors"
+
+	"github.com/skynet2/db-backup/pkg/configuration"
 )
 
 func createChannel(cfg configuration.NotificationChannelConfig) (Channel, error) {

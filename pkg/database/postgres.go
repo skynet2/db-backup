@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
 
 	"github.com/skynet2/db-backup/pkg/configuration"
 )

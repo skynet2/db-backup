@@ -6,11 +6,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/cristalhq/aconfig"
 	"github.com/cristalhq/aconfig/aconfigdotenv"
 	"github.com/cristalhq/aconfig/aconfigyaml"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
 	"github.com/skynet2/db-backup/pkg/configuration"

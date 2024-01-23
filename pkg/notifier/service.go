@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"text/template"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 
 	"github.com/skynet2/db-backup/pkg/common"
 	"github.com/skynet2/db-backup/pkg/configuration"
