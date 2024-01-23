@@ -134,6 +134,7 @@ func (s S3Provider) multiPartUpload(
 
 	buffer := make([]byte, maxPartSize)
 	partNumber := 1
+	completedParts := make([]*s3.CompletedPart, 0)
 	for {
 		n, readErr := reader.Read(buffer)
 		if readErr != nil {
@@ -149,7 +150,7 @@ func (s S3Provider) multiPartUpload(
 			toUpload = buffer[:n]
 		}
 
-		_, uploadPartErr := s.uploadPart(ctx, cl, resp, toUpload, partNumber)
+		part, uploadPartErr := s.uploadPart(ctx, cl, resp, toUpload, partNumber)
 		if uploadPartErr != nil {
 			err = s.abortMultipartUpload(ctx, cl, resp)
 			if err != nil {
@@ -158,10 +159,30 @@ func (s S3Provider) multiPartUpload(
 
 			return uploadPartErr
 		}
+		completedParts = append(completedParts, part)
 		partNumber += 1
 	}
 
-	return nil
+	return s.completeMultipartUpload(ctx, cl, resp, completedParts)
+}
+
+func (s S3Provider) completeMultipartUpload(
+	ctx context.Context,
+	svc *s3.S3,
+	resp *s3.CreateMultipartUploadOutput,
+	completedParts []*s3.CompletedPart,
+) error {
+	completeInput := &s3.CompleteMultipartUploadInput{
+		Bucket:   resp.Bucket,
+		Key:      resp.Key,
+		UploadId: resp.UploadId,
+		MultipartUpload: &s3.CompletedMultipartUpload{
+			Parts: completedParts,
+		},
+	}
+
+	_, err := svc.CompleteMultipartUploadWithContext(ctx, completeInput)
+	return err
 }
 
 func (s S3Provider) abortMultipartUpload(
