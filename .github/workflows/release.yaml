@@ -8,11 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     container: golang:bookworm
     steps:
-      - uses: actions/checkout@v2
-      - run: apt-get update && apt-get install -y git
+      - uses: actions/checkout@v4
       - run: go mod vendor
       - run: mkdir dist
-      - run: cd cmd/db-backup && GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o ../../dist/db-backup
+      - run: GOFLAGS=-buildvcs=false cd cmd/db-backup && GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o ../../dist/db-backup
       - run: cp config.yaml dist/
       - run: tar cf db-backup.tar dist/
       - name: release
