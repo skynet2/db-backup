@@ -6,7 +6,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    container: golang:bookworm
+    container: golang:1.20-bullseye
     steps:
       - uses: actions/checkout@v4
       - run: go mod vendor
