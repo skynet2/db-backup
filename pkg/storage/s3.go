@@ -35,7 +35,9 @@ type S3Provider struct {
 }
 
 func NewS3Provider(cfg configuration.S3Config) Provider {
-	config := &aws.Config{}
+	config := &aws.Config{
+		MaxRetries: aws.Int(3),
+	}
 
 	if region := cfg.Region; len(region) > 0 {
 		config.Region = aws.String(region)
