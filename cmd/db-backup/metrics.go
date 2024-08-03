@@ -57,6 +57,6 @@ func pushMetrics(prometheusPushGatewayUrl string, jobName string) error {
 		Collector(failTotalCounter).
 		Collector(successPerDbCounter).
 		Collector(failPerDbCounter).
-		Format(expfmt.FmtText).
+		Format(expfmt.NewFormat(expfmt.TypeTextPlain)).
 		Push()
 }

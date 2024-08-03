@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/avast/retry-go"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -102,6 +103,25 @@ func (s S3Provider) Upload(
 		return err
 	}
 
+	attempt := 0
+	return retry.Do(func() error {
+		attempt += 1
+
+		ctx = zerolog.Ctx(ctx).With().Str("file", finalFilePath).
+			Str("finalFilePath", finalFilePath).
+			Int64("size", fileStat.Size()).
+			Int("attempt", attempt).Logger().WithContext(ctx)
+
+		return s.uploadInternal(ctx, finalFilePath, fileStat, file)
+	}, retry.Context(ctx), retry.Attempts(5))
+}
+
+func (s S3Provider) uploadInternal(
+	ctx context.Context,
+	finalFilePath string,
+	fileStat os.FileInfo,
+	file *os.File,
+) error {
 	if fileStat.Size() < minMultipartSize {
 		zerolog.Ctx(ctx).Info().Msgf("Uploading file %v using simple upload", finalFilePath)
 		return s.simpleUpload(ctx, finalFilePath, file)
