@@ -8,7 +8,7 @@ jobs:
   download:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: rm -rf .git
       - uses: actions/upload-artifact@v2
         with:
@@ -17,7 +17,7 @@ jobs:
           retention-days: 1
   test:
     runs-on: ubuntu-latest
-    container: golang:1.19-bullseye
+    container: golang:1.22-bullseye
     services:
       postgres:
         image: postgres:14-bullseye
