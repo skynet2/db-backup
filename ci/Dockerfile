@@ -1,6 +1,6 @@
 ARG PG_VERSION
 
-FROM golang:1.20-alpine as builder
+FROM golang:1.22-alpine as builder
 ADD ./ /src
 WORKDIR /src
 RUN mkdir /dist && go build -o /dist/db-backup ./cmd/db-backup/
