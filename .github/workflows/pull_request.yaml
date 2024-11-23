@@ -8,6 +8,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container: golang:1.23-bullseye
+    env:
+      GOFLAGS: -buildvcs=false
     steps:
       - uses: actions/checkout@v4
       - uses: golangci/golangci-lint-action@v6.1.1
