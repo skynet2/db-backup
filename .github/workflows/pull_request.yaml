@@ -5,19 +5,21 @@ on:
       - master
 
 jobs:
-  download:
+  lint:
     runs-on: ubuntu-latest
+    container: golang:1.23-bullseye
+    env:
+      GOFLAGS: -buildvcs=false
     steps:
       - uses: actions/checkout@v4
-      - run: rm -rf .git
-      - uses: actions/upload-artifact@v2
+      - uses: golangci/golangci-lint-action@v6.1.1
+        if: github.ref != 'refs/heads/master'
         with:
-          path: ./
-          name: code
-          retention-days: 1
+          version: latest
+          args: --timeout=5m --tests=false ./...
   test:
     runs-on: ubuntu-latest
-    container: golang:1.22-bullseye
+    container: golang:1.23-bullseye
     services:
       postgres:
         image: postgres:14-bullseye
@@ -26,26 +28,9 @@ jobs:
           POSTGRES_HOST_AUTH_METHOD: trust
     env:
       ENVIRONMENT: ci
-    needs: [ download ]
     steps:
-      - uses: actions/download-artifact@v2
-        with:
-          path: /source
-          name: code
-      - run: ls /source/
-      - run: apt-get update && apt-get install curl openssl git openssh-client build-essential -y && mkdir -p /root/.ssh && mkdir -p /source
-      - run: cd /source && go mod vendor
-      - run: wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /source/
-        if: github.ref != 'refs/heads/master'
-      - run: cd /source && ./golangci-lint run ./... --timeout 3m
-        if: github.ref != 'refs/heads/master'
-      - run: cd /source && environment=ci go test -json -coverprofile=/root/coverage.txt -covermode=atomic ./... > /root/test.json
-#      - name: Upload coverage report
-#        uses: codecov/codecov-action@v3
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
-#          files: /root/coverage.txt
-#          flags: unittests
+      - uses: actions/checkout@v4
+      - run: environment=ci go test -json -coverprofile=/root/coverage.txt -covermode=atomic ./... > /root/test.json
       - run: cat /root/test.json
         if: always()
       - uses: guyarb/golang-test-annotations@v0.5.0

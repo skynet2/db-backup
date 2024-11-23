@@ -18,6 +18,7 @@
 ## Supported notification channels (providers)
 - [x] discord
 - [x] telegram
+- [x] mattermost
 - [ ] slack
 
 ## Configuration example
