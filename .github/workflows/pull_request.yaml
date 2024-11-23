@@ -5,6 +5,16 @@ on:
       - master
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: golang:1.23-bullseye
+    steps:
+      - uses: actions/checkout@v4
+      - uses: golangci/golangci-lint-action@v6.1.1
+        if: github.ref != 'refs/heads/master'
+        with:
+          version: latest
+          args: --timeout=5m --tests=false ./...
   test:
     runs-on: ubuntu-latest
     container: golang:1.23-bullseye
@@ -18,19 +28,7 @@ jobs:
       ENVIRONMENT: ci
     steps:
       - uses: actions/checkout@v4
-      - run: apt-get update && apt-get install curl openssl git openssh-client build-essential -y
-      - run: go mod vendor
-      - run: wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /source/
-        if: github.ref != 'refs/heads/master'
-      - run: ./golangci-lint run ./... --timeout 3m
-        if: github.ref != 'refs/heads/master'
       - run: environment=ci go test -json -coverprofile=/root/coverage.txt -covermode=atomic ./... > /root/test.json
-#      - name: Upload coverage report
-#        uses: codecov/codecov-action@v3
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
-#          files: /root/coverage.txt
-#          flags: unittests
       - run: cat /root/test.json
         if: always()
       - uses: guyarb/golang-test-annotations@v0.5.0
