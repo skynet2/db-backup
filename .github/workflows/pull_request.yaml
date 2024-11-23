@@ -22,9 +22,9 @@ jobs:
       - run: go mod vendor
       - run: wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /source/
         if: github.ref != 'refs/heads/master'
-      - run: cd /source && ./golangci-lint run ./... --timeout 3m
+      - run: ./golangci-lint run ./... --timeout 3m
         if: github.ref != 'refs/heads/master'
-      - run: cd /source && environment=ci go test -json -coverprofile=/root/coverage.txt -covermode=atomic ./... > /root/test.json
+      - run: environment=ci go test -json -coverprofile=/root/coverage.txt -covermode=atomic ./... > /root/test.json
 #      - name: Upload coverage report
 #        uses: codecov/codecov-action@v3
 #        with:
