@@ -27,7 +27,7 @@ func (m *Mattermost) SendMessage(
 	enableNotification bool,
 ) error {
 	if enableNotification {
-		message += "@everyone"
+		message += "@channel"
 	}
 
 	data, err := json.Marshal(map[string]interface{}{
