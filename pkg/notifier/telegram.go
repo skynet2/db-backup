@@ -40,13 +40,11 @@ func (t TelegramChannel) SendMessage(ctx context.Context, message string, enable
 	}
 
 	data, err := json.Marshal(req)
-
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
-
 	if err != nil {
 		return errors.WithStack(err)
 	}

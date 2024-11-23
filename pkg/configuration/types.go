@@ -59,8 +59,9 @@ type S3Config struct {
 }
 
 type NotificationChannelConfig struct {
-	Type    string `yaml:"type" env:"NOTIFICATION_CHANNEL_TYPE"`
-	Token   string `yaml:"access_token" env:"NOTIFICATION_CHANNEL_ACCESS_TOKEN"`
-	Chat    string `yaml:"chat_id" env:"NOTIFICATION_CHANNEL_CHAT_ID"`
-	Webhook string `json:"webhook" env:"NOTIFICATION_CHANNEL_WEBHOOK"`
+	Type              string `yaml:"type" env:"NOTIFICATION_CHANNEL_TYPE"`
+	Token             string `yaml:"access_token" env:"NOTIFICATION_CHANNEL_ACCESS_TOKEN"`
+	Chat              string `yaml:"chat_id" env:"NOTIFICATION_CHANNEL_CHAT_ID"`
+	Webhook           string `json:"webhook" env:"NOTIFICATION_CHANNEL_WEBHOOK"`
+	MattermostWebhook string `json:"mattermost_webhook" env:"NOTIFICATION_CHANNEL_MATTERMOST_WEBHOOK"`
 }
